@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora CF — Calibración v4</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --yellow:#FFE600;--blue:#3483FA;--blue-dark:#2968C8;--green:#00A650;
+  --red:#F23D4F;--amber:#FF7733;--purple:#9B51E0;
+  --text-dark:#333;--text-mid:#666;--text-light:#999;
+  --bg:#F5F5F5;--white:#fff;--border:#E8E8E8;
+  --shadow:0 1px 6px rgba(0,0,0,.07);
+}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text-dark);font-size:14px}
+.header{position:sticky;top:0;z-index:100;background:#333;padding:0 24px;display:flex;align-items:center;justify-content:space-between;min-height:56px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header-left{display:flex;align-items:center;gap:12px}
+.meli-badge{background:var(--yellow);color:#333;font-weight:800;font-size:13px;padding:4px 12px;border-radius:20px;letter-spacing:1px}
+.header-title{color:#fff;font-size:15px;font-weight:700}
+.header-sub{color:#aaa;font-size:11px;margin-top:2px}
+.version-badge{background:var(--green);color:#fff;font-weight:700;font-size:11px;padding:3px 10px;border-radius:20px}
+.nav-tabs{background:#fff;border-bottom:2px solid #eee;display:flex;gap:0;padding:0 24px;position:sticky;top:56px;z-index:99;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow-x:auto}
+.nav-tab{padding:14px 20px;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .2s,border-color .2s}
+.nav-tab:hover{color:var(--blue)}
+.nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-content{display:none;padding:20px 24px;max-width:1700px;margin:0 auto}
+.tab-content.active{display:block}
+.section-label{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-mid);padding:18px 0 8px;display:block}
+.table-block{margin-bottom:32px}
+.table-block-header{background:linear-gradient(135deg,#2d2d2d 0%,#3d3d3d 100%);color:#fff;border-radius:8px 8px 0 0;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.table-block-header h3{font-size:13px;font-weight:800;margin:0}
+.table-block-header p{font-size:11px;color:#bbb;margin:0}
+.table-block-header .badge{background:var(--yellow);color:#333;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.table-block-header .badge-blue{background:var(--blue);color:#fff}
+.table-block-header .badge-purple{background:var(--purple);color:#fff}
+.table-block-header .badge-amber{background:var(--amber);color:#fff}
+.calc-table-wrap{overflow-x:auto;border-radius:0 0 8px 8px;box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.calc-table{border-collapse:collapse;font-size:11px;background:#fff;min-width:max-content;table-layout:auto}
+.calc-table th{background:#2d2d2d;color:#fff;padding:6px 8px;text-align:center;font-size:9.5px;font-weight:700;border:1px solid #444;white-space:nowrap}
+.calc-table th.plat-hdr{background:#1a1a1a;font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+.calc-table th.row-bu{left:0;z-index:3;position:sticky;width:36px}
+.calc-table th.row-ct{left:36px;z-index:3;position:sticky;min-width:80px}
+.calc-table td{padding:6px 8px;text-align:center;font-weight:700;border:1px solid #e0e0e0;white-space:nowrap;min-width:42px;font-size:12px}
+.calc-table .row-bu{text-align:center;background:#f5f5f5;font-weight:900;width:36px;padding:4px;position:sticky;left:0;z-index:2;border-right:1px solid #ddd;font-size:10px}
+.calc-table .row-ct{text-align:left;background:#fafafa;font-size:10.5px;font-weight:600;min-width:80px;padding:5px 8px;position:sticky;left:36px;z-index:2;border-right:2px solid #ccc}
+.calc-table td.cf-1{background:#FFEBEE;color:#c62828}
+.calc-table td.cf-2{background:#FFF3E0;color:#e65100}
+.calc-table td.cf-3{background:#E8F5E9;color:#1b5e20}
+.calc-table td.cf-4{background:#E3F2FD;color:#0d47a1}
+.calc-table td.cf-5{background:#BBDEFB;color:#0d47a1}
+.calc-table td.cf-6{background:#EDE7F6;color:#4527A0}
+.calc-table td.cf-mixed{background:#FFF9C4;color:#555500;font-size:9px}
+.calc-table td.cf-empty{background:#F8F8F8;color:#bbb;font-weight:400;font-size:10px}
+.calc-table td.cf-reserva{background:#f3e8ff;color:#6f2da8}
+.bu-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.bu-btn{padding:5px 16px;border-radius:20px;border:1.5px solid #ddd;background:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.bu-btn.active-all{background:#333;border-color:#333;color:#fff}
+.bu-btn.active-ml{background:var(--blue);border-color:var(--blue);color:#fff}
+.bu-btn.active-mp{background:var(--green);border-color:var(--green);color:#fff}
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;background:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+.filter-bar input,.filter-bar select{padding:7px 11px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;outline:none}
+.filter-bar input{min-width:200px}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--blue)}
+.table-wrap{overflow-x:auto;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.07)}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:12.5px}
+th{background:#f5f5f5;padding:9px 11px;text-align:left;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-mid);position:sticky;top:0;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+td{padding:8px 11px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:nth-child(even) td{background:#f9f9f9}
+tr:hover td{background:#EBF4FF!important}
+.cf-pill{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:12px;font-weight:800;color:#fff}
+.cf-pill.cf-1{background:#d32f2f}.cf-pill.cf-2{background:#ef6c00}.cf-pill.cf-3{background:#388e3c}
+.cf-pill.cf-4{background:#1565c0}.cf-pill.cf-5{background:#0277bd}.cf-pill.cf-6{background:#6a1b9a}
+.nc-code{font-family:monospace;font-size:11.5px;font-weight:600;background:#f5f5f5;padding:2px 6px;border-radius:4px}
+.tipo-pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:700;white-space:nowrap}
+.tipo-cal{background:#e6f4ed;color:#00A650}
+.tipo-deal-cal{background:#e8f0fe;color:#2968C8}
+.tipo-iiee{background:#fff3e0;color:#FF7733}
+.tipo-reserva{background:#f3e8ff;color:#9B51E0}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:8px}
+.info-card{background:#fff;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.07);padding:18px 20px}
+.info-card h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;color:var(--text-mid)}
+.info-card p{font-size:12px;line-height:1.6;color:var(--text-dark)}
+.notice{background:#fffde7;border-left:4px solid var(--yellow);padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:16px;font-size:12px}
+@media(max-width:700px){.info-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="meli-badge">MELI</span>
+    <div>
+      <div class="header-title">Calculadora CF — Calibración de Medios</div>
+      <div class="header-sub">Branding ON · Marketing Science</div>
+    </div>
+  </div>
+  <span class="version-badge">v4 · 31/03/2026</span>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" id="ntab-calc" onclick="switchTab('calc')">Calculadora</div>
+  <div class="nav-tab" id="ntab-search" onclick="switchTab('search')">Buscar NC</div>
+  <div class="nav-tab" id="ntab-info" onclick="switchTab('info')">Deals &amp; Reservas</div>
+</div>
+
+<!-- TAB: CALCULADORA -->
+<div id="tab-calc" class="tab-content active">
+  <div style="background:linear-gradient(135deg,#2d2d2d,#4a4a4a);color:#fff;border-radius:8px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div><h2 style="font-size:15px;font-weight:800;margin:0">CF por Canal — Calibración v4</h2><p style="font-size:11px;color:#bbb;margin:4px 0 0">Go live: 31/03/2026 · Próxima calibración: end May 2026</p></div>
+  </div>
+  <div class="bu-filter-bar">
+    <button class="bu-btn active-all" onclick="setBU('all',this)">Todos</button>
+    <button class="bu-btn" onclick="setBU('ML',this)">ML — Mercado Libre</button>
+    <button class="bu-btn" onclick="setBU('MP',this)">MP — Mercado Pago</button>
+    <span style="font-size:11px;color:var(--text-mid);margin-left:4px">Filas = BU / Campaign Type · Columnas = Network Code + Opt</span>
+  </div>
+  <div id="pivot-bau-wrap" class="table-block">
+    <div class="table-block-header">
+      <div><h3>BAU — Calibradas</h3><p>Optimizable SI · Deals NO</p></div>
+      <span class="badge badge-blue">Calibrada</span>
+    </div>
+    <div class="calc-table-wrap" id="pivot-bau"></div>
+  </div>
+  <div id="pivot-reservas-wrap" class="table-block">
+    <div class="table-block-header">
+      <div><h3>Reservas</h3><p>CF mantenida — no recalibrada en v4 · solo para cálculo de IIEE</p></div>
+      <span class="badge badge-purple">Reserva</span>
+    </div>
+    <div class="calc-table-wrap" id="pivot-reservas"></div>
+  </div>
+  <div id="pivot-deals-opt-wrap" class="table-block">
+    <div class="table-block-header">
+      <div><h3>Deals Calibrables</h3><p>Preferred Deals (V-PD · D-PD) · el OPTI usa esta CF</p></div>
+      <span class="badge badge-blue">Deals Calibrables</span>
+    </div>
+    <div class="calc-table-wrap" id="pivot-deals-opt"></div>
+  </div>
+  <div id="pivot-deals-noopt-wrap" class="table-block">
+    <div class="table-block-header">
+      <div><h3>Deals No Optimizables</h3><p>V-PG · D-PG · A-PG — solo para cálculo de IIEE, OPTI no mueve presupuesto</p></div>
+      <span class="badge badge-amber">Deals No Opt.</span>
+    </div>
+    <div class="calc-table-wrap" id="pivot-deals-noopt"></div>
+  </div>
+</div>
+
+<!-- TAB: BUSCAR NC -->
+<div id="tab-search" class="tab-content">
+  <div class="filter-bar">
+    <input type="text" id="s-search" placeholder="Buscar network code, canal..." oninput="renderSearch()">
+    <select id="s-bu" onchange="renderSearch()">
+      <option value="">ML + MP</option>
+      <option value="ML">ML</option>
+      <option value="MP">MP</option>
+    </select>
+    <select id="s-tabla" onchange="renderSearch()">
+      <option value="">Todas las tablas</option>
+      <option value="BAU">BAU Calibradas</option>
+      <option value="Reserva">Reservas</option>
+      <option value="Deal+Cal.">Deals Optimizables</option>
+      <option value="IIEE">Deals No Opt.</option>
+    </select>
+    <select id="s-cf" onchange="renderSearch()">
+      <option value="">Todos los CF</option>
+      <option value="1">CF 1</option><option value="2">CF 2</option><option value="3">CF 3</option>
+      <option value="4">CF 4</option><option value="5">CF 5</option><option value="6">CF 6</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table><thead><tr>
+      <th>BU</th><th>Camp. Type</th><th>Network Code</th><th>Canal</th>
+      <th>Optimización</th><th style="text-align:center">CF</th><th>Tabla</th>
+    </tr></thead>
+    <tbody id="s-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- TAB: INFO -->
+<div id="tab-info" class="tab-content">
+  <div class="info-grid">
+    <div class="info-card">
+      <h4 style="color:var(--purple)">Reservas — no opt.</h4>
+      <p>Formatos de precio fijo negociado con el partner. El OPTI <strong>no puede mover</strong> el presupuesto.<br><br>
+      CF no recalibrada en v4 — se mantiene el valor anterior. Se usa únicamente para calcular IIEE.<br><br>
+      <strong>Códigos:</strong> TT-TF · TT-TBLAST · TT-TOPV · FB-BLAST · IG-IBLAST · G-DV-YT-MH · G-DV-YT-FIRSTIMP · G-DV-YT-LU · G-GA-YT-FP · G-GA-YT-MH · G-GA-YT-MH-CPH · PINTEREST-SPOT · PINTEREST-PBLAST · PINTEREST-SPOT-HOME · PINTEREST-SPOT-SEARCH</p>
+    </div>
+    <div class="info-card">
+      <h4 style="color:var(--blue)">Deals Calibrables</h4>
+      <p><strong>Deals=SI, Optimizable=SI</strong> · Preferred Deals (V-PD · D-PD)<br><br>
+      Solo los Preferred Deals son optimizables. El OPTI <em>usa esta CF</em> para mover presupuesto, pero en grupos separados del inventario BAU.<br><br>
+      Calibramos cuando hay volumen de estudios suficiente. Si no mantiene valor anterior.</p>
+    </div>
+    <div class="info-card">
+      <h4 style="color:var(--green)">Calibrada (BAU)</h4>
+      <p>CF resultado del proceso de calibración v4.<br><br>
+      <strong>Próxima revisión:</strong> mayo 2026.</p>
+    </div>
+    <div class="info-card">
+      <h4 style="color:var(--amber)">Deals No Optimizables</h4>
+      <p><strong>Deals=SI, Optimizable=NO</strong> · V-PG · D-PG · A-PG (Guaranteed Deals)<br><br>
+      Precio fijo garantizado. CF asignada únicamente para calcular IIEE correctamente. El OPTI <em>no mueve</em> presupuesto.<br><br>
+      No optimizables por diseño del deal.</p>
+    </div>
+  </div>
+  <div class="notice" style="margin-top:16px">
+    <strong>Network Codes:</strong> Todos los códigos mostrados corresponden a la nomenclatura <strong>actualizada (NUEVO)</strong> según el archivo "Updates Network Codes". Los códigos obsoletos (MEDIOS-*, YT-G-DV-*, DV-DV-*, FB-FB-*, TT-TTK-*) fueron mapeados automáticamente.
+  </div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+// [bu, ct, network_name, opt, nc_old, nc, cf, deals(bool), opti(bool)]
+const RAW_DATA = [
+// ═══ RESERVAS ════════════════════════════════════════════════════════════════
+// G-DV-YT-LU
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-LU','G-DV-YT-LU',2,false,false],
+['ML','BRD','YOUTUBE','VIEWS','G-DV-YT-LU','G-DV-YT-LU',2,false,false],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-LU','G-DV-YT-LU',2,false,false],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-LU','G-DV-YT-LU',1,false,false],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-LU','G-DV-YT-LU',3,false,false],
+// G-DV-YT-MH
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',1,false,false],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',1,false,false],
+['MP','PP-CON','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',2,false,false],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',1,false,false],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',2,false,false],
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-MH','G-DV-YT-MH',2,false,false],
+// G-DV-YT-FIRSTIMP
+['ML','FE','YOUTUBE','REACH','G-DV-YT-FIRSTIMP','G-DV-YT-FIRSTIMP',3,false,false],
+// G-GA-YT-FP
+['MP','UF-AW','YOUTUBE','REACH','G-GA-YT-FP','G-GA-YT-FP',1,false,false],
+['MP','UF-AWG','YOUTUBE','REACH','G-GA-YT-FP','G-GA-YT-FP',2,false,false],
+// G-GA-YT-MH
+['MP','UF-AW','YOUTUBE','REACH','G-GA-YT-MH','G-GA-YT-MH',1,false,false],
+['MP','UF-AWG','YOUTUBE','REACH','G-GA-YT-MH','G-GA-YT-MH',2,false,false],
+// G-GA-YT-MH-CPH
+['ML','FE','YOUTUBE','REACH','G-GA-YT-MH-CPH','G-GA-YT-MH-CPH',2,false,false],
+['MP','UF-AWG','YOUTUBE','REACH','G-GA-YT-MH-CPH','G-GA-YT-MH-CPH',2,false,false],
+// TT-TF
+['ML','BRD','TIKTOK','REACH','TT-TF','TT-TF',3,false,false],
+['ML','FE','TIKTOK','REACH','TT-TF','TT-TF',3,false,false],
+['ML','SOCIAL','TIKTOK','REACH','TT-TF','TT-TF',3,false,false],
+['MP','PP-CON','TIKTOK','REACH','TT-TF','TT-TF',2,false,false],
+['MP','UF-AW','TIKTOK','REACH','TT-TF','TT-TF',3,false,false],
+['MP','UF-AWG','TIKTOK','REACH','TT-TF','TT-TF',4,false,false],
+['MP','PE','TIKTOK','REACH','TT-TF','TT-TF',2,false,false],
+// TT-TOPV
+['ML','BRD','TIKTOK','REACH','TT-TOPV','TT-TOPV',2,false,false],
+['ML','FE','TIKTOK','REACH','TT-TOPV','TT-TOPV',1,false,false],
+['MP','PP-CON','TIKTOK','REACH','TT-TOPV','TT-TOPV',1,false,false],
+['MP','UF-AW','TIKTOK','REACH','TT-TOPV','TT-TOPV',2,false,false],
+['MP','UF-AWG','TIKTOK','REACH','TT-TOPV','TT-TOPV',3,false,false],
+// TT-TBLAST
+['ML','FE','TIKTOK','REACH','TT-TBLAST','TT-TBLAST',1,false,false],
+// FB-BLAST
+['ML','BRD','FACEBOOK','REACH','FB-BLAST','FB-BLAST',1,false,false],
+['ML','FE','FACEBOOK','REACH','FB-BLAST','FB-BLAST',1,false,false],
+['MP','UF-AW','FACEBOOK','REACH','FB-BLAST','FB-BLAST',1,false,false],
+['MP','UF-AWG','FACEBOOK','REACH','FB-BLAST','FB-BLAST',2,false,false],
+// IG-IBLAST
+['ML','BRD','INSTAGRAM','REACH','IG-IBLAST','IG-IBLAST',1,false,false],
+['ML','FE','INSTAGRAM','REACH','IG-IBLAST','IG-IBLAST',1,false,false],
+// PINTEREST-SPOT
+['ML','BRD','PINTEREST','REACH','PINTEREST-SPOT','PINTEREST-SPOT',2,false,false],
+['ML','FE','PINTEREST','REACH','PINTEREST-SPOT','PINTEREST-SPOT',2,false,false],
+['MP','UF-AW','PINTEREST','REACH','PINTEREST-SPOT','PINTEREST-SPOT',1,false,false],
+// PINTEREST-SPOT-HOME
+['ML','BRD','PINTEREST','REACH','PINTEREST-SPOT-HOME','PINTEREST-SPOT-HOME',1,false,false],
+['ML','FE','PINTEREST','REACH','PINTEREST-SPOT-HOME','PINTEREST-SPOT-HOME',1,false,false],
+['ML','SOCIAL','PINTEREST','REACH','PINTEREST-SPOT-HOME','PINTEREST-SPOT-HOME',3,false,false],
+['MP','UF-AW','PINTEREST','REACH','PINTEREST-SPOT-HOME','PINTEREST-SPOT-HOME',1,false,false],
+// PINTEREST-SPOT-SEARCH
+['ML','BRD','PINTEREST','REACH','PINTEREST-SPOT-SEARCH','PINTEREST-SPOT-SEARCH',2,false,false],
+['ML','FE','PINTEREST','REACH','PINTEREST-SPOT-SEARCH','PINTEREST-SPOT-SEARCH',2,false,false],
+['ML','SOCIAL','PINTEREST','REACH','PINTEREST-SPOT-SEARCH','PINTEREST-SPOT-SEARCH',2,false,false],
+['MP','UF-AW','PINTEREST','REACH','PINTEREST-SPOT-SEARCH','PINTEREST-SPOT-SEARCH',1,false,false],
+// PINTEREST-PBLAST
+['ML','SOCIAL','PINTEREST','REACH','PINTEREST-PBLAST','PINTEREST-PBLAST',2,false,false],
+['ML','FE','PINTEREST','REACH','PINTEREST-PBLAST','PINTEREST-PBLAST',2,false,false],
+
+// ═══ DEALS NO OPTIMIZABLES (IIEE) ════════════════════════════════════════════
+['MP','UF-AWG','DDL-SBT','VIEWS','DDL-SBT','DDL-SBT',3,true,false],
+['MP','UF-AWG','DDL-SPOTIFY-AUD','A-PG','DDL-SPOTIFY-AUD','DDL-SPOTIFY-AUD',3,true,false],
+['MP','UF-AWG','DDL-SPOTIFY-AUD','D-PG','DDL-SPOTIFY-AUD','DDL-SPOTIFY-AUD',5,true,false],
+['MP','UF-AW','DDL-SBT','VIEWS','DDL-SBT','DDL-SBT',1,true,false],
+['MP','UF-AW','DDL-SPOTIFY-AUD','A-PG','DDL-SPOTIFY-AUD','DDL-SPOTIFY-AUD',1,true,false],
+['MP','UF-AW','DDL-SPOTIFY-AUD','D-PG','DDL-SPOTIFY-AUD','DDL-SPOTIFY-AUD',3,true,false],
+['ML','BRD','DDL-SNKA','D-PG','DDL-SNKA','DDL-SNKA',3,true,false],
+['ML','BRD','KWAI','REACH','KWAI-KW','KWAI-KW',2,true,false],
+['ML','BRD','DDL-ARK','V-PG','DDL-ARK','DDL-ARK',3,true,false],
+['ML','FE','DDL-ARTEAR','D-PG','DDL-ARTEAR','DDL-ARTEAR',3,true,false],
+['ML','FE','DDL-SPOTIFY-AUD','D-PG','DDL-SPOTIFY-AUD','DDL-SPOTIFY-AUD',6,true,false],
+['ML','FE','DDL-TIEMPO','D-PG','DDL-TIEMPO','DDL-TIEMPO',3,true,false],
+['ML','FE','DDL-TIEMPO','REACH','DDL-TIEMPO','DDL-TIEMPO',6,true,false],
+['ML','FE','KWAI','REACH','KWAI-KW','KWAI-KW',2,true,false],
+['ML','FE','KWAI','TRAF','KWAI-KW','KWAI-KW',2,true,false],
+['ML','FE','DDL-ARK','V-PG','DDL-ARK','DDL-ARK',3,true,false],
+['ML','FE','DDL-DISNEY-CTV','V-PG','DDL-DISNEY-CTV','DDL-DISNEY-CTV',3,true,false],
+['ML','FE','DDL-SPOTIFY-HPTO','V-PG','DDL-SPOTIFY-HPTO','DDL-SPOTIFY-HPTO',1,true,false],
+
+// ═══ BAU CALIBRADAS (opti=true, deals=false, nc NOT in reserva) ══════════════
+// ML BRD
+['ML','BRD','DV','REACH','G-DV-AUDIO','G-DV-AUDIO',2,false,true],
+['ML','BRD','YOUTUBE','VIEWS','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['ML','BRD','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['ML','BRD','FACEBOOK','REACH','FB-REACH','FB-REACH',3,false,true],
+['ML','BRD','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',3,false,true],
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-NONS','G-DV-YT-NONS',1,false,true],
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',2,false,true],
+['ML','BRD','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',2,false,true],
+['ML','BRD','FACEBOOK','TXS','FB-CONV','FB-CONV',2,false,true],
+['ML','BRD','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['ML','BRD','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',1,false,true],
+['ML','BRD','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['ML','BRD','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',2,false,true],
+['ML','BRD','INSTAGRAM','TXS','IG-CONVS','IG-CONVS',3,false,true],
+['ML','BRD','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',3,false,true],
+['ML','BRD','INSTAGRAM','VIEWS','IG-VVIEW','IG-VVIEW',2,false,true],
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',2,false,true],
+['ML','BRD','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',5,false,true],
+['ML','BRD','TIKTOK','CONS','TT-INF','TT-INF',4,false,true],
+['ML','BRD','INSTAGRAM','ENGAGEMENT','IG-ENGA','IG-ENGA',3,false,true],
+['ML','BRD','TIKTOK','REACH','TT-INF','TT-INF',3,false,true],
+['ML','BRD','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',4,false,true],
+['ML','BRD','TIKTOK','TRAF','TT-INF','TT-INF',4,false,true],
+['ML','BRD','DV','VIEWS','G-DV-VIDEO','G-DV-VIDEO',5,false,true],
+['ML','BRD','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',4,false,true],
+['ML','BRD','TIKTOK','VIEWS','TT-INF','TT-INF',5,false,true],
+['ML','BRD','PINTEREST','REACH','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['ML','BRD','PINTEREST','VIEWS','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['ML','BRD','PINTEREST','TRAF','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+// ML FE
+['ML','FE','YOUTUBE','VIEWS','G-DV-YT-SHORTS','G-DV-YT-SHORTS',3,false,true],
+['ML','FE','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',2,false,true],
+['ML','FE','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',3,false,true],
+['ML','FE','TIKTOK','VIEWS','TT-COUNTD','TT-COUNTD',3,false,true],
+['ML','FE','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-NONS','G-DV-YT-NONS',1,false,true],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',1,false,true],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',1,false,true],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',2,false,true],
+['ML','FE','FACEBOOK','TXS','FB-CONV','FB-CONV',2,false,true],
+['ML','FE','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',3,false,true],
+['ML','FE','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',2,false,true],
+['ML','FE','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['ML','FE','TIKTOK','CONS','TT-INF','TT-INF',3,false,true],
+['ML','FE','INSTAGRAM','ENGAGEMENT','IG-ENGA','IG-ENGA',3,false,true],
+['ML','FE','FACEBOOK','REACH','FB-REACH','FB-REACH',5,false,true],
+['ML','FE','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',4,false,true],
+['ML','FE','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',4,false,true],
+['ML','FE','TIKTOK','REACH','TT-INF','TT-INF',5,false,true],
+['ML','FE','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',4,false,true],
+['ML','FE','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',3,false,true],
+['ML','FE','TIKTOK','TRAF','TT-INF','TT-INF',3,false,true],
+['ML','FE','INSTAGRAM','TXS','IG-CONVS','IG-CONVS',3,false,true],
+['ML','FE','TIKTOK','TXS','TT-INF','TT-INF',5,false,true],
+['ML','FE','DV','VIEWS','G-DV-VIDEO','G-DV-VIDEO',5,false,true],
+['ML','FE','INSTAGRAM','VIEWS','IG-VVIEW','IG-VVIEW',3,false,true],
+['ML','FE','TIKTOK','VIEWS','TT-INF','TT-INF',5,false,true],
+['ML','FE','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',4,false,true],
+['ML','FE','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',3,false,true],
+['ML','FE','PINTEREST','TRAF','PINTEREST-CARR','PINTEREST-CARR',3,false,true],
+['ML','FE','PINTEREST','TRAF','PINTEREST-CAT','PINTEREST-CAT',3,false,true],
+['ML','FE','PINTEREST','TRAF','PINTEREST-GIFT','PINTEREST-GIFT',3,false,true],
+['ML','FE','PINTEREST','REACH','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['ML','FE','PINTEREST','VIEWS','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['ML','FE','PINTEREST','TRAF','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+// ML SOCIAL
+['ML','SOCIAL','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['ML','SOCIAL','FACEBOOK','REACH','FB-REACH','FB-REACH',2,false,true],
+['ML','SOCIAL','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',1,false,true],
+['ML','SOCIAL','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',2,false,true],
+['ML','SOCIAL','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',2,false,true],
+['ML','SOCIAL','YOUTUBE','VIEWS','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['ML','SOCIAL','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',2,false,true],
+['ML','SOCIAL','TIKTOK','VIEWS','TT-INF','TT-INF',2,false,true],
+['ML','SOCIAL','TIKTOK','CONS','TT-INF','TT-INF',5,false,true],
+['ML','SOCIAL','TIKTOK','ENGAGEMENT','TT-INF','TT-INF',4,false,true],
+['ML','SOCIAL','TIKTOK','REACH','TT-INF','TT-INF',5,false,true],
+['ML','SOCIAL','PINTEREST','TRAF','PINTEREST-PINEXT','PINTEREST-PINEXT',2,false,true],
+['ML','SOCIAL','PINTEREST','CONS','PINTEREST-PINEXT','PINTEREST-PINEXT',2,false,true],
+['ML','SOCIAL','PINTEREST','REACH','PINTEREST-VPIN','PINTEREST-VPIN',2,false,true],
+['ML','SOCIAL','PINTEREST','VIEWS','PINTEREST-VPIN','PINTEREST-VPIN',2,false,true],
+['ML','SOCIAL','PINTEREST','TRAF','PINTEREST-VPIN','PINTEREST-VPIN',2,false,true],
+// MP PE
+['MP','PE','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['MP','PE','FACEBOOK','REACH','FB-REACH','FB-REACH',1,false,true],
+['MP','PE','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['MP','PE','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',1,false,true],
+['MP','PE','YOUTUBE','REACH','G-DV-YT-NONS','G-DV-YT-NONS',1,false,true],
+['MP','PE','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',1,false,true],
+['MP','PE','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',2,false,true],
+['MP','PE','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',1,false,true],
+['MP','PE','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','PE','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',2,false,true],
+['MP','PE','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',1,false,true],
+['MP','PE','TIKTOK','REACH','TT-INF','TT-INF',4,false,true],
+['MP','PE','TIKTOK','VIEWS','TT-INF','TT-INF',4,false,true],
+['MP','PE','PINTEREST','REACH','PINTEREST-IDEA','PINTEREST-IDEA',3,false,true],
+// MP PP-CON
+['MP','PP-CON','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',3,false,true],
+['MP','PP-CON','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',3,false,true],
+['MP','PP-CON','INSTAGRAM','ENGAGEMENT','IG-ENGA','IG-ENGA',4,false,true],
+['MP','PP-CON','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['MP','PP-CON','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',1,false,true],
+['MP','PP-CON','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['MP','PP-CON','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',3,false,true],
+['MP','PP-CON','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',3,false,true],
+['MP','PP-CON','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',3,false,true],
+['MP','PP-CON','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',4,false,true],
+['MP','PP-CON','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',2,false,true],
+['MP','PP-CON','FACEBOOK','TXS','FB-CONV','FB-CONV',2,false,true],
+['MP','PP-CON','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',1,false,true],
+['MP','PP-CON','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',2,false,true],
+['MP','PP-CON','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',1,false,true],
+['MP','PP-CON','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',1,false,true],
+['MP','PP-CON','TIKTOK','CONS','TT-INF','TT-INF',5,false,true],
+['MP','PP-CON','TIKTOK','REACH','TT-INF','TT-INF',5,false,true],
+['MP','PP-CON','TIKTOK','TRAF','TT-INF','TT-INF',5,false,true],
+['MP','PP-CON','DV','VIEWS','G-DV-VIDEO','G-DV-VIDEO',4,false,true],
+['MP','PP-CON','TIKTOK','VIEWS','TT-INF','TT-INF',5,false,true],
+// MP UF-AW
+['MP','UF-AW','FACEBOOK','TXS','FB-CONV','FB-CONV',2,false,true],
+['MP','UF-AW','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['MP','UF-AW','FACEBOOK','REACH','FB-REACH','FB-REACH',2,false,true],
+['MP','UF-AW','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',2,false,true],
+['MP','UF-AW','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',2,false,true],
+['MP','UF-AW','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['MP','UF-AW','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['MP','UF-AW','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',3,false,true],
+['MP','UF-AW','DV','TRAF','G-DV-VIDEO','G-DV-VIDEO',2,false,true],
+['MP','UF-AW','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','UF-AW','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-NONS','G-DV-YT-NONS',1,false,true],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',1,false,true],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',1,false,true],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',2,false,true],
+['MP','UF-AW','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',1,false,true],
+['MP','UF-AW','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',2,false,true],
+['MP','UF-AW','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',2,false,true],
+['MP','UF-AW','INSTAGRAM','ENGAGEMENT','IG-ENGA','IG-ENGA',3,false,true],
+['MP','UF-AW','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',3,false,true],
+['MP','UF-AW','TIKTOK','TRAF','TT-SEARCHADS','TT-SEARCHADS',1,false,true],
+['MP','UF-AW','TIKTOK','CONS','TT-INF','TT-INF',4,false,true],
+['MP','UF-AW','TIKTOK','ENGAGEMENT','TT-INF','TT-INF',4,false,true],
+['MP','UF-AW','TIKTOK','REACH','TT-INF','TT-INF',4,false,true],
+['MP','UF-AW','TIKTOK','TRAF','TT-INF','TT-INF',4,false,true],
+['MP','UF-AW','TIKTOK','TXS','TT-INF','TT-INF',5,false,true],
+['MP','UF-AW','TIKTOK','VIEWS','TT-INF','TT-INF',4,false,true],
+['MP','UF-AW','PINTEREST','REACH','PINTEREST-STDPIN','PINTEREST-STDPIN',3,false,true],
+// MP UF-AWG
+['MP','UF-AWG','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',4,false,true],
+['MP','UF-AWG','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',3,false,true],
+['MP','UF-AWG','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',3,false,true],
+['MP','UF-AWG','FACEBOOK','REACH','FB-REACH','FB-REACH',4,false,true],
+['MP','UF-AWG','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',5,false,true],
+['MP','UF-AWG','DV','TRAF','G-DV-VIDEO','G-DV-VIDEO',4,false,true],
+['MP','UF-AWG','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',4,false,true],
+['MP','UF-AWG','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',4,false,true],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-NONS','G-DV-YT-NONS',2,false,true],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',2,false,true],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',3,false,true],
+['MP','UF-AWG','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',2,false,true],
+['MP','UF-AWG','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',3,false,true],
+['MP','UF-AWG','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',3,false,true],
+['MP','UF-AWG','INSTAGRAM','ENGAGEMENT','IG-ENGA','IG-ENGA',4,false,true],
+['MP','UF-AWG','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',4,false,true],
+['MP','UF-AWG','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',4,false,true],
+['MP','UF-AWG','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',4,false,true],
+['MP','UF-AWG','TIKTOK','REACH','TT-INF','TT-INF',4,false,true],
+['MP','UF-AWG','TIKTOK','TRAF','TT-INF','TT-INF',4,false,true],
+['MP','UF-AWG','TIKTOK','TXS','TT-INF','TT-INF',4,false,true],
+['MP','UF-AWG','TIKTOK','TRAF','TT-SEARCHADS','TT-SEARCHADS',3,false,true],
+['MP','UF-AWG','TIKTOK','CONS','TT-INF','TT-INF',5,false,true],
+['MP','UF-AWG','TIKTOK','VIEWS','TT-INF','TT-INF',5,false,true],
+['MP','UF-AWG','PINTEREST','REACH','PINTEREST-STDPIN','PINTEREST-STDPIN',4,false,true],
+['MP','UF-AWG','PINTEREST','REACH','PINTEREST-VPIN','PINTEREST-VPIN',4,false,true],
+// MP UF-CON
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',1,false,true],
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',2,false,true],
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',2,false,true],
+['MP','UF-CON','DV','VIEWS','G-DV-VIDEO','G-DV-VIDEO',2,false,true],
+['MP','UF-CON','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',2,false,true],
+['MP','UF-CON','FACEBOOK','REACH','FB-REACH','FB-REACH',2,false,true],
+['MP','UF-CON','DV','REACH','G-DV-DISPLAY','G-DV-DISPLAY',3,false,true],
+['MP','UF-CON','DV','REACH','G-DV-VIDEO','G-DV-VIDEO',3,false,true],
+['MP','UF-CON','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',2,false,true],
+['MP','UF-CON','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',2,false,true],
+['MP','UF-CON','YOUTUBE','TRAF','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','UF-CON','FACEBOOK','TXS','FB-CONV','FB-CONV',2,false,true],
+['MP','UF-CON','DV','TXS','G-DV-AUDIO','G-DV-AUDIO',2,false,true],
+['MP','UF-CON','DV','TXS','G-DV-DISPLAY','G-DV-DISPLAY',2,false,true],
+['MP','UF-CON','DV','TXS','G-DV-VIDEO','G-DV-VIDEO',2,false,true],
+['MP','UF-CON','YOUTUBE','TXS','G-DV-YT-DEM','G-DV-YT-DEM',2,false,true],
+['MP','UF-CON','INSTAGRAM','TXS','IG-CONVS','IG-CONVS',2,false,true],
+['MP','UF-CON','FACEBOOK','VIEWS','FB-VVIEWS','FB-VVIEWS',2,false,true],
+['MP','UF-CON','YOUTUBE','VIEWS','G-DV-YT-VVC','G-DV-YT-VVC',2,false,true],
+['MP','UF-CON','YOUTUBE','VIEWS','G-DV-YT-VVC-CTV','G-DV-YT-VVC-CTV',2,false,true],
+['MP','UF-CON','TIKTOK','CONS','TT-INF','TT-INF',4,false,true],
+['MP','UF-CON','TIKTOK','TRAF','TT-INF','TT-INF',4,false,true],
+['MP','UF-CON','TIKTOK','TXS','TT-INF','TT-INF',4,false,true],
+['MP','UF-CON','TIKTOK','VIEWS','TT-INF','TT-INF',5,false,true],
+['MP','UF-CON','PINTEREST','REACH','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['MP','UF-CON','PINTEREST','VIEWS','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+['MP','UF-CON','PINTEREST','TRAF','PINTEREST-VPIN','PINTEREST-VPIN',3,false,true],
+// MP PP-CONG
+['MP','PP-CONG','DV','TRAF','G-DV-DISPLAY','G-DV-DISPLAY',6,false,true],
+['MP','PP-CONG','YOUTUBE','REACH','G-DV-YT-NONS-CTV','G-DV-YT-NONS-CTV',2,false,true],
+['MP','PP-CONG','YOUTUBE','REACH','G-DV-YT-SHORTS','G-DV-YT-SHORTS',3,false,true],
+['MP','PP-CONG','YOUTUBE','REACH','G-DV-YT-VRC-CTV','G-DV-YT-VRC-CTV',4,false,true],
+['MP','PP-CONG','YOUTUBE','REACH','G-DV-YT-VRC','G-DV-YT-VRC',4,false,true],
+['MP','PP-CONG','FACEBOOK','TRAF','FB-TRAF','FB-TRAF',4,false,true],
+['MP','PP-CONG','FACEBOOK','ENGAGEMENT','FB-ENG','FB-ENG',5,false,true],
+['MP','PP-CONG','INSTAGRAM','TRAF','IG-TRAFI','IG-TRAFI',3,false,true],
+// ═══ DEALS OPTIMIZABLES (Deals=SI, Opti=SI) ═══════════════════════════════════
+// MP UF-AWG
+['MP','UF-AWG','DV','V-PD','G-DV-DL-ADM-VID','G-DV-DL-ADMA',3,true,true],
+['MP','UF-AWG','DV','D-PD','G-DV-DL-ADSMO-DISP','G-DV-DL-ADSMO-DISP',5,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-ETER','G-DV-DL-ETER',3,true,true],
+['MP','UF-AWG','DV','D-PD','G-DV-DL-FUT-DISP','G-DV-DL-FUT-DISP',5,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-PAIS','G-DV-DL-PAIS',3,true,true],
+['MP','UF-AWG','DV','D-PD','G-DV-DL-PML','G-DV-DL-PML',5,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-SH','G-DV-DL-SH',3,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-SPOTIFY','G-DV-DL-SPOTIFY',3,true,true],
+['MP','UF-AWG','DV','D-PD','G-DV-DL-STAG-CID','G-DV-DL-STAG',5,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-STAG-VID','G-DV-DL-STAG-VID',3,true,true],
+['MP','UF-AWG','DV','V-PD','G-DV-DL-VLTN-VID','G-DV-DL-VLTN-VID',3,true,true],
+// MP PP-CON
+['MP','PP-CON','DV','V-PD','G-DV-DL-ADSPT','G-DV-DL-ADSPT',3,true,true],
+['MP','PP-CON','DV','V-PD','G-DV-DL-GROW-VID','G-DV-DL-GROW-VID',3,true,true],
+['MP','PP-CON','DV','V-PD','G-DV-DL-MICE-VID','G-DV-DL-MICE-VID',3,true,true],
+['MP','PP-CON','DV','V-PD','G-DV-DL-STAG-VID','G-DV-DL-STAG-VID',3,true,true],
+// MP UF-AW
+['MP','UF-AW','DV','D-PD','G-DV-DL-FUT-DISP','G-DV-DL-FUT-DISP',4,true,true],
+// MP UF-CON
+['MP','UF-CON','DV','V-PD','G-DV-DL-CLINIC','G-DV-DL-CLINIC',3,true,true],
+['MP','UF-CON','DV','V-PD','G-DV-DL-MICE-VID','G-DV-DL-MICE-VID',3,true,true],
+['MP','UF-CON','DV','V-PD','G-DV-DL-SH','G-DV-DL-SH',3,true,true],
+['MP','UF-CON','DV','V-PD','G-DV-DL-TEADS','G-DV-DL-TEADS',3,true,true],
+// ML BRD
+['ML','BRD','DV','V-PD','G-DV-TW','G-DV-TW',4,true,true],
+['ML','BRD','DV','D-PD','G-DV-DL-STAG','G-DV-DL-STAG',5,true,true],
+['ML','BRD','DV','D-PD','G-DV-DL-GAP-DISP','G-DV-DL-GAP-DISP',4,true,true],
+['ML','BRD','DV','V-PD','G-DV-DL-FUT-VID','G-DV-DL-FUT-VID',3,true,true],
+['ML','BRD','DV','V-PD','G-DV-DL-SH','G-DV-DL-SH',5,true,true],
+// ML FE
+['ML','FE','DV','D-PD','G-DV-TW','G-DV-TW',3,true,true],
+['ML','FE','DV','V-PD','G-DV-TW','G-DV-TW',3,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-ADSMO-VID','G-DV-DL-ADSMO-VID',4,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-FUT-VID','G-DV-DL-FUT-VID',4,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-MICE-VID','G-DV-DL-MICE-VID',2,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-SH','G-DV-DL-SH',4,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-SPOTIFY-SPON','G-DV-DL-SPOTIFY-SPON',4,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-STAG','G-DV-DL-STAG',4,true,true],
+['ML','FE','DV','V-PD','G-DV-DL-VLTN-VID','G-DV-DL-VLTN-VID',4,true,true],
+// MP PE
+];
+
+const RESERVA_NCS = new Set([
+  'TT-TF','TT-TBLAST','TT-TOPV',
+  'FB-BLAST','IG-IBLAST',
+  'G-DV-YT-MH','G-DV-YT-FIRSTIMP','G-DV-YT-LU','G-GA-YT-FP','G-GA-YT-MH','G-GA-YT-MH-CPH','G-GA-YT-SPON',
+  'PINTEREST-SPOT','PINTEREST-PBLAST','PINTEREST-SPOT-HOME','PINTEREST-SPOT-SEARCH'
+]);
+
+const DATA = RAW_DATA.map(r => {
+  const [bu,ct,name,opt,nc_old,nc,cf,deals,opti] = r;
+  let tabla;
+  if(RESERVA_NCS.has(nc)) tabla='Reserva';
+  else if(opti && !deals) tabla='BAU';
+  else if(opti && deals) tabla='Deal+Cal.';
+  else if(!opti && deals) tabla='IIEE';
+  else tabla='BAU';
+  return {bu,ct,name,opt,nc_old,nc,cf,deals,opti,tabla};
+});
+
+const PLAT_ORDER = ['Meta/IG','DV360·YouTube','DV360·DemGen','DV360·Video Online','DV360·Display','DV360·Audio','TikTok','Pinterest','Otros'];
+
+function classifyNC(nc, opt) {
+  if(/^(FB|IG)-/.test(nc)) return 'Meta/IG';
+  if(/^TT-/.test(nc)) return 'TikTok';
+  if(/^PINTEREST-/.test(nc)) return 'Pinterest';
+  if(/^(KWAI|DDL|G-DV-PROOH|G-DV-TW|G-DV-DEAL)/.test(nc)) return 'Otros';
+  if(/^G-(DV|GA)-YT-DEM/.test(nc)) return 'DV360·DemGen';
+  if(/^G-(DV|GA)-YT/.test(nc)) return 'DV360·YouTube';
+  if(nc==='G-DV-AUDIO') return 'DV360·Audio';
+  if(nc==='G-DV-VIDEO') return 'DV360·Video Online';
+  if(nc==='G-DV-DISPLAY') return 'DV360·Display';
+  // Generic deal code: split by opt
+  if(nc==='G-DV-DL') return (opt==='D-PD'||opt==='TRAF'||opt==='REACH'||opt==='CLICKS') ? 'DV360·Display' : 'DV360·Video Online';
+  // Specific deal codes: infer from suffix
+  if(/^G-DV-DL-/.test(nc)) return (/-DISP|-CID|-STAG$/.test(nc)||opt==='D-PD') ? 'DV360·Display' : 'DV360·Video Online';
+  if(/^G-DV-/.test(nc)) return 'DV360·Video Online';
+  return 'Otros';
+}
+
+let buFilter = 'all';
+
+function buildAllPivots() {
+  buildPivot('BAU','pivot-bau');
+  buildPivot('Reserva','pivot-reservas');
+  buildPivot('Deal+Cal.','pivot-deals-opt');
+  buildPivot('IIEE','pivot-deals-noopt');
+}
+
+function buildPivot(tablaName, elId) {
+  let rows = DATA.filter(d => d.tabla === tablaName);
+  if(buFilter !== 'all') rows = rows.filter(d => d.bu === buFilter);
+
+  const lookup = {};
+  rows.forEach(d => {
+    const key = d.bu+'||'+d.ct;
+    if(!lookup[key]) lookup[key] = {bu:d.bu, ct:d.ct, ncs:{}};
+    const k2 = d.nc+'|||'+d.opt;
+    if(!lookup[key].ncs[k2]) lookup[key].ncs[k2] = new Set();
+    lookup[key].ncs[k2].add(d.cf);
+  });
+
+  const bucts = Object.values(lookup).sort((a,b)=>(a.bu+a.ct).localeCompare(b.bu+b.ct));
+  if(!bucts.length){
+    document.getElementById(elId).innerHTML='<div style="padding:20px;text-align:center;color:#999;background:#fff;font-size:12px">Sin datos para el filtro seleccionado</div>';
+    return;
+  }
+
+  const colSet = {};
+  bucts.forEach(row => {
+    Object.keys(row.ncs).forEach(k => {
+      const [nc,opt] = k.split('|||');
+      if(!colSet[k]) colSet[k]={nc,opt,plat:classifyNC(nc,opt)};
+    });
+  });
+
+  const cols = Object.values(colSet).sort((a,b) => {
+    const pi=PLAT_ORDER.indexOf(a.plat), pj=PLAT_ORDER.indexOf(b.plat);
+    const pi2=pi===-1?99:pi, pj2=pj===-1?99:pj;
+    if(pi2!==pj2) return pi2-pj2;
+    if(a.nc!==b.nc) return a.nc.localeCompare(b.nc);
+    return a.opt.localeCompare(b.opt);
+  });
+
+  const platGroups=[];
+  let cur=null, cnt=0;
+  cols.forEach(c=>{
+    if(c.plat!==cur){if(cur!==null)platGroups.push({name:cur,count:cnt});cur=c.plat;cnt=1;}
+    else cnt++;
+  });
+  if(cur) platGroups.push({name:cur,count:cnt});
+
+  const isReserva = tablaName==='Reserva';
+
+  let html='<table class="calc-table"><thead>';
+  html+='<tr><th class="row-bu plat-hdr" rowspan="3">BU</th><th class="row-ct plat-hdr" rowspan="3">Campaign Type</th>';
+  platGroups.forEach(pg=>{html+=`<th class="plat-hdr" colspan="${pg.count}">${pg.name}</th>`;});
+  html+='</tr><tr>';
+  cols.forEach(c=>{html+=`<th style="font-size:9px" title="${c.nc}">${c.nc}</th>`;});
+  html+='</tr><tr>';
+  cols.forEach(c=>{html+=`<th style="font-size:8px">${c.opt}</th>`;});
+  html+='</tr></thead><tbody>';
+
+  bucts.forEach(row=>{
+    const buColor=row.bu==='ML'?'color:#B8A000':'color:#3483FA';
+    html+=`<tr><td class="row-bu" style="${buColor}">${row.bu}</td><td class="row-ct">${row.ct}</td>`;
+    cols.forEach(c=>{
+      const cfs=row.ncs[c.nc+'|||'+c.opt];
+      if(!cfs||!cfs.size){html+='<td class="cf-empty">—</td>';return;}
+      const arr=[...cfs].sort((a,b)=>a-b);
+      if(isReserva){html+=`<td class="cf-reserva">${arr.join('/')}</td>`;}
+      else if(arr.length===1){html+=`<td class="cf-${arr[0]}">${arr[0]}</td>`;}
+      else{html+=`<td class="cf-mixed">${arr.join('/')}</td>`;}
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById(elId).innerHTML=html;
+}
+
+function setBU(bu,btn){
+  buFilter=bu;
+  document.querySelectorAll('.bu-btn').forEach(b=>b.className='bu-btn');
+  btn.classList.add(bu==='all'?'active-all':bu==='ML'?'active-ml':'active-mp');
+  buildAllPivots();
+}
+
+function renderSearch(){
+  const q=(document.getElementById('s-search')||{value:''}).value.toLowerCase();
+  const bu=(document.getElementById('s-bu')||{value:''}).value;
+  const tabla=(document.getElementById('s-tabla')||{value:''}).value;
+  const cf=(document.getElementById('s-cf')||{value:''}).value;
+  let rows=DATA;
+  if(q) rows=rows.filter(d=>(d.nc+d.nc_old+d.name+d.opt).toLowerCase().includes(q));
+  if(bu) rows=rows.filter(d=>d.bu===bu);
+  if(tabla) rows=rows.filter(d=>d.tabla===tabla);
+  if(cf) rows=rows.filter(d=>String(d.cf)===cf);
+  const tbody=document.getElementById('s-tbody');
+  if(!tbody) return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#999;padding:24px">Sin resultados</td></tr>';return;}
+  const tablaClass={'BAU':'tipo-cal','Reserva':'tipo-reserva','Deal+Cal.':'tipo-deal-cal','IIEE':'tipo-iiee'};
+  tbody.innerHTML=rows.map(d=>{
+    const buColor=d.bu==='ML'?'color:#B8A000;font-weight:800':'color:#3483FA;font-weight:800';
+    return `<tr>
+      <td style="${buColor}">${d.bu}</td>
+      <td style="font-size:11px;color:#666">${d.ct}</td>
+      <td><span class="nc-code">${d.nc}</span></td>
+      <td style="font-size:11px">${d.name}</td>
+      <td><strong>${d.opt}</strong></td>
+      <td style="text-align:center"><span class="cf-pill cf-${d.cf}">${d.cf}</span></td>
+      <td><span class="tipo-pill ${tablaClass[d.tabla]||'tipo-cal'}">${d.tabla}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function switchTab(tab){
+  ['calc','search','info'].forEach(t=>{
+    document.getElementById('ntab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='search') renderSearch();
+}
+
+buildAllPivots();
+renderSearch();
+</script>
+</body>
+</html>
